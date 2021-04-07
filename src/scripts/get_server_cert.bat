@@ -10,4 +10,4 @@ set SERVER=localhost
 set PORT=8200
 set CACERT=server_cert.pem
 
-%OPENSSL% openssl s_client -showcerts -servername %SERVER% -connect %SERVER%:%PORT% > %CACERT%
+%OPENSSL% s_client -showcerts -servername %SERVER% -connect %SERVER%:%PORT% > %CACERT%

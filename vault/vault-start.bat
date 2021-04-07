@@ -1,1 +1,1 @@
-vault server -config ./vault-test.hcl
+vault server -config ./vault-server-config.hcl

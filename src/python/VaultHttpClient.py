@@ -10,7 +10,7 @@ class VaultHttpClient:
         self.host      = "localhost"
         self.port      = "8200"
         self.apiV      = "v1"
-        self.__cert      = "./certs/server_cert.pem"
+        self.__cert      = "./server_cert.pem"
         self.__baseUrl   = "https://" + self.host + ":" + self.port + "/" + self.apiV
         
         # TEST KEYS
