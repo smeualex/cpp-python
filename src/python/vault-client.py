@@ -1,7 +1,11 @@
 import os
 import sys
+import errno
 import logging
 import datetime
+import subprocess
+
+from os import path
 
 from VaultHttpClient import VaultHttpClient
 
@@ -23,15 +27,15 @@ class Vault:
         response = self.cli.get("/sys/health")
         # unseal it if it's sealed
         if(response["sealed"]):
-            log.debug('Vault is sealed. Unsealing the vault')
+            log.info('Vault is sealed. Unsealing the vault')
             self.cli.unseal()
 
     def listVaultUsers(self):
         response = self.cli.list_vault_users()
-        print("Found users: ")
+        log.info("Found users: ")
         users = response['data']['keys']
         for user in users:
-            print('     {}'.format(user))
+            log.info('     {}'.format(user))
 
     def createToken(self, username, email, comment='', valid_time='1h', policies=[], renewable=False, log_response=False):
         # build the meta dictionary
@@ -61,6 +65,14 @@ class Vault:
         auth_header = { 'X-Vault-Token': token }
         return self.cli.post('/auth/token/renew-self', auth_header, payload)
 
+def get_vault_server_certificate():
+    if not path.exists("server_cert.pem"):
+        log.info('  >> server certificate not found; invoking openssl client to get it')
+        openssl_cmd = ['get_server_cert.bat']
+        retCode = subprocess.check_call(openssl_cmd, stderr=subprocess.STDOUT, shell=True)
+    else:
+        log.info('  >> server certificate found')
+
 def init():
     # set up logging
     now = datetime.datetime.now()
@@ -68,6 +80,12 @@ def init():
 
     log_file_name = 'vault-.log'
     cwd = os.path.dirname(os.path.realpath(__file__))
+    try:
+        os.makedirs('logs')
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
     log_file = os.path.join(cwd, 'logs', log_file_name)
     logging.basicConfig(
             handlers=[
@@ -75,17 +93,21 @@ def init():
                 logging.StreamHandler(sys.stdout)],                             # log to console
             level=logging.DEBUG,
             format='%(asctime)s | %(levelname)5.5s | %(name)10s | %(message)s')
+
+    get_vault_server_certificate()
+
     # we are going
-    print('')
-    print('-' * 80)
-    print('-- Program started')
+    log.info('')
+    log.info('-' * 80)
+    log.info('-- Program started')
 
 def basic_vault_test():
     vault_http_client = VaultHttpClient()
     # our main object for interacting with vault
     v=Vault(vault_http_client)
     v.unsealIfSealed()
-    v.listVaultUsers()
+    # user auth needs to be enabled first
+    # v.listVaultUsers()
     # create a renewable token valid for 1m
     response = v.createToken("Python-test", "somemail@mail.com", 'This is a token', 
                              valid_time="1m", renewable=True, log_response=True)

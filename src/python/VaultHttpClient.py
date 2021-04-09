@@ -6,6 +6,12 @@ from http import HTTPStatus
 log = logging.getLogger("VaultHttpClient")
 
 class VaultHttpClient:
+    def __read_root_token(self, file_name):
+        key = ''
+        with open(file_name, 'r') as f:
+            key = f.readline()
+        return key
+
     def __init__(self):
         self.host      = "localhost"
         self.port      = "8200"
@@ -13,11 +19,11 @@ class VaultHttpClient:
         self.__cert      = "./server_cert.pem"
         self.__baseUrl   = "https://" + self.host + ":" + self.port + "/" + self.apiV
         
-        # TEST KEYS
-        #   - from scratch, perform a `vault init`
-        #   - copy\paste the returned keys here
-        self.__unsealKey = 'nQr3ihGb+96FJ9ZH8TjTfzuz8rLWlTR/TB+4yEWyaUg='
-        self.__rootToken = 's.FzqhniwVW3K9PC9d2rTpKzmO'
+        self.__unsealKey = self.__read_root_token('vault_unseal_keys')
+        self.__rootToken = self.__read_root_token('vault_root_token')
+
+        log.info('unseal key: {}'.format(self.__unsealKey))
+        log.info('root token: {}'.format(self.__rootToken))
 
     def get(self, endpoint, headers={}, json_payload={}):
         return self.__perform_request('GET', endpoint, headers, json_payload)
