@@ -9,3 +9,5 @@ listener "tcp" {
 }
 
 ui = true
+
+api_addr = "https://127.0.0.1:8200"
